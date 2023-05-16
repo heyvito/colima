@@ -167,7 +167,21 @@ func newConf(ctx context.Context, conf config.Config) (l Config, err error) {
 						Proto:             TCP,
 					},
 					PortForward{
+						GuestIP:           net.ParseIP("::"),
+						GuestPort:         80,
+						GuestIPMustBeZero: true,
+						Ignore:            true,
+						Proto:             TCP,
+					},
+					PortForward{
 						GuestIP:           net.ParseIP("0.0.0.0"),
+						GuestPort:         443,
+						GuestIPMustBeZero: true,
+						Ignore:            true,
+						Proto:             TCP,
+					},
+					PortForward{
+						GuestIP:           net.ParseIP("::"),
 						GuestPort:         443,
 						GuestIPMustBeZero: true,
 						Ignore:            true,
@@ -264,25 +278,48 @@ func newConf(ctx context.Context, conf config.Config) (l Config, err error) {
 			}
 		}
 
+		// define common variables
+		allPorts := [2]int{1, 65535}
+		allInterfacesIPv4 := net.ParseIP("0.0.0.0")
+		allInterfacesIPv6 := net.ParseIP("::")
+		loopbackIPv4 := net.ParseIP("127.0.0.1")
+		loopbackIPv6 := net.ParseIP("::1")
+
 		// handle port forwarding to allow listening on 0.0.0.0
-		// bind 0.0.0.0
+		// bind on all IPv4 and IPv6 interfaces
 		l.PortForwards = append(l.PortForwards,
 			PortForward{
 				GuestIPMustBeZero: true,
-				GuestIP:           net.ParseIP("0.0.0.0"),
-				GuestPortRange:    [2]int{1, 65535},
-				HostIP:            net.ParseIP("0.0.0.0"),
-				HostPortRange:     [2]int{1, 65535},
+				GuestIP:           allInterfacesIPv4,
+				GuestPortRange:    allPorts,
+				HostIP:            allInterfacesIPv4,
+				HostPortRange:     allPorts,
+				Proto:             TCP,
+			},
+			PortForward{
+				GuestIPMustBeZero: true,
+				GuestIP:           allInterfacesIPv6,
+				GuestPortRange:    allPorts,
+				HostIP:            allInterfacesIPv6,
+				HostPortRange:     allPorts,
 				Proto:             TCP,
 			},
 		)
-		// bind 127.0.0.1
+
+		// bind on all loopback interfaces
 		l.PortForwards = append(l.PortForwards,
 			PortForward{
-				GuestIP:        net.ParseIP("127.0.0.1"),
-				GuestPortRange: [2]int{1, 65535},
-				HostIP:         net.ParseIP("127.0.0.1"),
-				HostPortRange:  [2]int{1, 65535},
+				GuestIP:        loopbackIPv4,
+				GuestPortRange: allPorts,
+				HostIP:         loopbackIPv4,
+				HostPortRange:  allPorts,
+				Proto:          TCP,
+			},
+			PortForward{
+				GuestIP:        loopbackIPv6,
+				GuestPortRange: allPorts,
+				HostIP:         loopbackIPv6,
+				HostPortRange:  allPorts,
 				Proto:          TCP,
 			},
 		)
